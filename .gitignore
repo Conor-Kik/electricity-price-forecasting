@@ -1,0 +1,45 @@
+# Python environments and tool caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+pytest-cache-files-*/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Downloaded data, fitted models and generated experiment outputs
+**/nemosis_cache/
+**/nemseer_cache/
+model_cache/
+*.joblib
+*.pt
+*.pth
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.nc
+reports/*
+!reports/final-report.pdf
+!reports/final-report.md
+tmp/
+
+# Course resources and exploratory work are excluded from this release
+assets/
+model_research/
+notebooks/
+docs/proposal/
+docs/report/
+docs/timeline/
+project.pdf

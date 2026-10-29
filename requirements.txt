@@ -1,0 +1,15 @@
+pandas
+nemosis
+matplotlib
+numpy
+scikit-learn
+xgboost
+torch
+captum
+statsmodels
+tqdm
+joblib
+pytest
+
+# AEMO forecasts - pinned to PR #72 branch commit
+nemseer @ git+https://github.com/timcu/NEMSEER.git@b66d59651fc550e06d3249f427fc0117984af78c

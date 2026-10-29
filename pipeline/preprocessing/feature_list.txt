@@ -1,0 +1,38 @@
+Feature reference
+
+This file describes feature families; it is not loaded as model configuration.
+The actual input columns are recorded in prepared.features. The authoritative
+selection logic is essential_feature_columns() in features.py, controlled by
+FeatureConfig in config.py. Optional columns depend on the source data.
+
+Current market state
+  Examples: rrp, totaldemand, availablegeneration, netinterchange
+  Derived examples: reserve_margin_mw, reserve_ratio, demand_forecast_error_mw
+
+Historical observations
+  rrp_lag_*, demand_lag_*: prior observations
+  rrp_delta_*, demand_delta_*: changes over configured intervals
+  rrp_roll_mean_*, rrp_roll_std_*, demand_roll_mean_*: trailing summaries
+  Lag/window suffixes count input intervals (five minutes by default).
+
+Calendar
+  time_sin, time_cos, dow_sin, dow_cos, is_weekend
+
+Interconnectors
+  ic_*: available flow, capacity and utilisation-related inputs
+
+Known-future AEMO P5MIN forecasts
+  p5_hXX_*: forecasts issued at the origin for a lead of XX minutes
+  The default leads are 05, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55 and 60.
+  Examples: p5_h05_rrp, p5_h30_rrp_vs_now, p5_h60_reserve_margin_mw
+
+Optional forecast reliability
+  Added when ExperimentConfig.forecast_reliability is enabled.
+  These summarise forecast errors whose actual outcomes are already observed.
+
+Learned graph features
+  gnn_emb_*: appended when graph embedding is enabled in ExperimentConfig
+
+Targets and metadata are separate from model inputs
+  target_hXX, target_rrp_hXX, target and target_rrp are labels/outcomes.
+  region and settlement_date identify forecast origins.
