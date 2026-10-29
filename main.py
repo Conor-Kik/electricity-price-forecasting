@@ -40,19 +40,17 @@ EXPERIMENT: ExperimentConfig = ExperimentConfig(
     target_type="change",
     model_features="all",
     validation_fraction=0.20,
+    selection_metric="mae",
 )
 
-# Each entry pairs a model constructor with candidate hyperparameter values.
-# Search evaluates their Cartesian product; one-element lists fix a setting.
-# Keep the search small; candidate counts depend on each model's grid.
-# Neural losses compare MAE with Huber at the original learning rate;
-# validation early stopping already selects the final epoch budget.
+# Each model has one default configuration. Add values to its parameter lists
+# to tune it; the search evaluates all combinations on chronological validation.
+# Neural forecasters use MAE loss and validation selects their epoch budget.
 MODEL_REGISTRY: list[tuple[type[Model], dict[str, Sequence]]] = [
     (
         XGBoostModel,
         {
-            # Compare a shallower ensemble with the current tree capacity.
-            "max_depth": [4, 6],
+            "max_depth": [6],
             "learning_rate": [0.1],
             "min_child_weight": [4],
             "max_estimators": [1000],
@@ -61,9 +59,8 @@ MODEL_REGISTRY: list[tuple[type[Model], dict[str, Sequence]]] = [
     (
         ARIMAModel,
         {
-            # Select differencing on validation data for each region.
             "p": [2],
-            "d": [1, 0],
+            "d": [1],
             "q": [0],
             "transform": ["asinh_mad"],
             "daily_harmonics": [0],
@@ -81,8 +78,7 @@ MODEL_REGISTRY: list[tuple[type[Model], dict[str, Sequence]]] = [
             "max_epochs": [30],
             "patience": [3],
             "min_delta": [0.001],
-            "loss": ["huber", "mae"],
-            "huber_delta": [1.0],
+            "loss": ["mae"],
         },
     ),
     (
@@ -99,8 +95,7 @@ MODEL_REGISTRY: list[tuple[type[Model], dict[str, Sequence]]] = [
             "max_epochs": [10],
             "patience": [2],
             "min_delta": [0.001],
-            "loss": ["huber", "mae"],
-            "huber_delta": [1.0],
+            "loss": ["mae"],
         },
     ),
     (
@@ -120,7 +115,6 @@ MODEL_REGISTRY: list[tuple[type[Model], dict[str, Sequence]]] = [
             "patience": [10],
             "min_delta": [0.001],
             "loss": ["mae"],
-            "huber_delta": [1.0],
         },
     ),
     (
@@ -137,8 +131,7 @@ MODEL_REGISTRY: list[tuple[type[Model], dict[str, Sequence]]] = [
             "max_epochs": [20],
             "patience": [3],
             "min_delta": [0.001],
-            "loss": ["huber", "mae"],
-            "huber_delta": [1.0],
+            "loss": ["mae"],
             "gradient_clip_norm": [1.0],
         },
     ),
@@ -157,7 +150,7 @@ MODEL_REGISTRY: list[tuple[type[Model], dict[str, Sequence]]] = [
             "max_epochs": [20],
             "patience": [5],
             "min_delta": [0.001],
-            "loss": ["mae", "huber"],
+            "loss": ["mae"],
             "device": [None],
         },
     )

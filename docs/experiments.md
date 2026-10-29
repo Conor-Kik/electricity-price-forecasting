@@ -42,10 +42,11 @@ each lead, and `main.py` reconstructs prices before evaluation:
 
 ```bash
 # With graph_embedding=None in EXPERIMENT, as in the example above
-python main.py --models gru --folds 3 --metric rmse --seed 42 --skip-shap
+python main.py --models gru --folds 3 --seed 42 --skip-shap
 python main.py --models lstm --skip-shap
 ```
 
+Each model starts with one configuration, and neural forecasters use MAE loss.
 Registry grids use sequences of values; every run evaluates their Cartesian
 product. One value fixes a parameter; multiple values compare alternatives.
 Edit the grid directly in `MODEL_REGISTRY`, for example setting an LSTM entry's
@@ -58,7 +59,8 @@ embargoed at the longest forecast lead. Validation errors are pooled across
 folds, and the selected model is freshly refitted on all pre-test data.
 Neural refits use the median selected epoch across folds.
 
-`--metric` accepts `mae`, `rmse`, `sse` or `median_ae` and also controls neural
+`--metric` defaults to `mae`; it also accepts `rmse`, `sse` or
+`median_ae` and controls neural
 checkpoint selection. `--seed` supplies the model seed unless a grid explicitly
 sets `random_seed`. The held-out test period is never used for selection.
 

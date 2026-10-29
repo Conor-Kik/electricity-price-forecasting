@@ -103,10 +103,6 @@ Edit [`main.py`](main.py):
 | GNN features | `EXPERIMENT.graph_embedding`; set to `None` to disable |
 | Model hyperparameters and search grids | `MODEL_REGISTRY` |
 
-The current experiment uses QLD1, price-change targets, all standard
-features plus GNN embeddings, and a 20% validation fraction. All experiments
-use the complete 12-horizon curve.
-
 Set `EXPERIMENT.region` to one of these NEM region codes:
 
 | Code | State |
@@ -132,24 +128,16 @@ Each run forecasts one region; enabled GNN features still use the other NEM
 regions as context. Add `graph_embedding=None` to disable those features.
 Validation fractions must be strictly between 0 and 1.
 
-In `MODEL_REGISTRY`, one value fixes a parameter and multiple values search all
-combinations. For example, `"hidden_size": [16, 32, 64]` compares three sizes.
+Each entry in `MODEL_REGISTRY` pairs a model constructor with lists of
+parameter values. The default lists contain one value each, so every model
+runs one configuration. Neural forecasters use MAE loss, and MAE is the
+default validation metric.
 
-The default grids use one or two candidates per model:
-
-| Model | Parameter searched | Values |
-| --- | --- | --- |
-| XGBoost | Tree depth | 4, 6 |
-| ARIMA | Differencing order (`d`) | 1, 0 |
-| MLP, GRU, LSTM, TCN | Training loss | MAE, Huber |
-| Transformer | Training loss (fixed) | MAE |
-
-All other settings stay fixed, including neural learning rate (0.001) and each
-model's Huber delta. Neural early stopping selects the epoch budget. Training
-loss is selected using the configured validation metric (MAE by default).
-With one validation fold, each region requires 13 candidate fits and 7 final
-refits; additional folds multiply the candidate fits. This is a small comparison
-rather than an exhaustive search.
+To tune a model, edit its parameter lists in `main.py`. For example, setting
+`"hidden_size": [16, 32, 64]` in a GRU or LSTM entry compares three hidden
+sizes. Multiple lists search all combinations; keep a single value for any
+parameter you want fixed. Candidates and neural checkpoints are selected on
+chronological validation data before the final refit.
 
 Use `--device cpu|cuda|xpu|auto` to select the device for the GNN encoder and
 deep models. Automatic selection prefers CUDA, then XPU, then CPU.
