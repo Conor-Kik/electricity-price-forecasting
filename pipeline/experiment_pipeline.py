@@ -12,6 +12,7 @@ import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field, replace
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -34,7 +35,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 TargetType = Literal["change", "price", "aemo_error"]
 FeatureSelection = Literal["all"] | Sequence[str]
-CACHE_SCHEMA_VERSION = 4
+CACHE_SCHEMA_VERSION = 5
 HOUR_HORIZONS = tuple(range(5, 61, 5))
 
 
@@ -76,6 +77,9 @@ def graph_source_fingerprint() -> str:
 class ExperimentConfig:
     """Configuration shared by all models in a comparable experiment."""
 
+    # Inclusive start and exclusive end, in timezone-naive NEM market time.
+    start_date: str = "2022-01-01"
+    end_date: str = "2026-07-31"
     region: str = "NSW1"
     target_type: TargetType = "change"
     model_features: FeatureSelection = "all"
@@ -91,6 +95,17 @@ class ExperimentConfig:
     graph_embedding: GraphEmbeddingConfig | None = field(default_factory=GraphEmbeddingConfig)
 
     def __post_init__(self) -> None:
+        try:
+            start = datetime.fromisoformat(self.start_date)
+            end = datetime.fromisoformat(self.end_date)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("start_date and end_date must be ISO date/time strings") from exc
+        if start.tzinfo is not None or end.tzinfo is not None:
+            raise ValueError("Experiment dates must use timezone-naive NEM market time")
+        if start >= end:
+            raise ValueError("start_date must be earlier than end_date")
+        object.__setattr__(self, "start_date", start.isoformat())
+        object.__setattr__(self, "end_date", end.isoformat())
         if self.feature_config.interval_minutes != 5:
             raise ValueError("The 12-output experiment requires five-minute data")
         if self.graph_embedding is not None and not isinstance(self.graph_embedding, GraphEmbeddingConfig):
@@ -151,11 +166,17 @@ class ExperimentConfig:
         return hashlib.sha256(serialised.encode("utf-8")).hexdigest()[:10]
 
     @property
+    def date_range_cache_key(self) -> str:
+        """Keep prepared data and graph embeddings separate for each date range."""
+        value = f"{self.start_date}/{self.end_date}"
+        return hashlib.sha256(value.encode()).hexdigest()[:12]
+
+    @property
     def cache_file(self) -> Path:
         embedding = self.graph_embedding_cache_key
         filename = (
             f"prepared_{self.region}_{self.horizon_minutes}min_"
-            f"{self.target_type}_{self.feature_cache_key}_"
+            f"{self.target_type}_{self.feature_cache_key}_{self.date_range_cache_key}_"
             f"{f'gnn{embedding}' if self.graph_embedding is not None else 'plain'}.joblib"
         )
         return self.cache_directory / filename
@@ -165,7 +186,7 @@ class ExperimentConfig:
         """Encoder output is independent of ``region`` and shared across them."""
         filename = (
             f"graph_embedding_{self.horizon_minutes}min_{self.target_type}_"
-            f"{self.graph_embedding_cache_key}.joblib"
+            f"{self.graph_embedding_cache_key}_{self.date_range_cache_key}.joblib"
         )
         return self.cache_directory / filename
 
@@ -177,6 +198,8 @@ class ExperimentConfig:
             features = list(self.model_features)
         metadata: dict[str, object] = {
             "schema_version": CACHE_SCHEMA_VERSION,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
             "region": self.region,
             "horizon_minutes": self.horizon_minutes,
             "target_type": self.target_type,
@@ -286,6 +309,8 @@ def load_prepared_data(
 
     data = prepare_model_data(
         region=config.region,
+        start=datetime.fromisoformat(config.start_date),
+        end=datetime.fromisoformat(config.end_date),
         horizon=config.horizon_minutes,
         features=config.model_features,
         target=config.target_type,

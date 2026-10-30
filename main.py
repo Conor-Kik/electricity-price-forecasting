@@ -37,6 +37,8 @@ from pipeline.tuning import SearchResult, search_hyperparameters
 
 EXPERIMENT: ExperimentConfig = ExperimentConfig(
     region="QLD1",
+    start_date="2022-01-01",
+    end_date="2026-07-31",
     target_type="change",
     model_features="all",
     validation_fraction=0.20,

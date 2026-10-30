@@ -9,7 +9,17 @@ We compare MLP, GRU, LSTM, TCN, Transformer, XGBoost and ARIMA against
 persistence (the current price) and available AEMO P5MIN forecasts. Models
 share data preparation, chronological validation and held-out test evaluation.
 
-The final project report will be added when complete.
+[Read the final project report](reports/final-report.pdf).
+
+## Authors
+
+The project was developed by:
+
+- [Conor Kikkert](https://github.com/Conor-Kik)
+- [Connor McAreavey](https://github.com/ConnorMcareavey)
+- [Tyreece Paul](https://github.com/tyreecepaul)
+- [John Pioc](https://github.com/johnpioc)
+- [Massimo Spadaro](https://github.com/MassiveMOE)
 
 ## Setup
 
@@ -100,6 +110,7 @@ Edit [`main.py`](main.py):
 | Setting | Where to change it |
 | --- | --- |
 | Region, target and input features | `EXPERIMENT` |
+| Data date range | `EXPERIMENT.start_date` and `EXPERIMENT.end_date` |
 | GNN features | `EXPERIMENT.graph_embedding`; set to `None` to disable |
 | Model hyperparameters and search grids | `MODEL_REGISTRY` |
 
@@ -118,11 +129,19 @@ For example, forecast Victoria by changing the configuration in `main.py`:
 ```python
 EXPERIMENT = ExperimentConfig(
     region="VIC1",
+    start_date="2023-01-01",
+    end_date="2024-01-01",
     target_type="change",        # "change", "price" or "aemo_error"
     model_features="all",        # Or a list of feature column names
     validation_fraction=0.20,     # Fraction of training rows used for validation
 )
 ```
+
+Set `start_date` and `end_date` in the `EXPERIMENT` configuration in `main.py`.
+They accept ISO dates or date/time strings in NEM market time (timezone-naive).
+The start is inclusive and the end is exclusive. Date ranges are included in
+prepared-data and graph-embedding cache identities, so changing dates uses a
+separate cache. The final 20% of the requested time range is reserved for testing.
 
 Each run forecasts one region; enabled GNN features still use the other NEM
 regions as context. Add `graph_embedding=None` to disable those features.
@@ -186,13 +205,3 @@ focused verification commands.
 | `docs/` | Technical guides |
 
 [Documentation](docs/README.md)
-
-## Authors
-
-The project was developed by:
-
-- [Conor Kikkert](https://github.com/Conor-Kik)
-- [Connor McAreavey](https://github.com/ConnorMcareavey)
-- [Tyreece Paul](https://github.com/tyreecepaul)
-- [John Pioc](https://github.com/johnpioc)
-- [Massimo Spadaro](https://github.com/MassiveMOE)

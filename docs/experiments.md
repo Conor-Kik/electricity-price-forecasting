@@ -10,6 +10,8 @@ Change the region or disable GNN features by editing the experiment:
 ```python
 EXPERIMENT = ExperimentConfig(
     region="VIC1",
+    start_date="2023-01-01",
+    end_date="2024-01-01",
     target_type="change",
     model_features="all",
     validation_fraction=0.20,
@@ -68,9 +70,13 @@ sets `random_seed`. The held-out test period is never used for selection.
 
 Ingestion in `pipeline/data_cleaning/data.py` combines dispatch prices,
 regional demand/generation, interconnector conditions and P5MIN forecasts.
-Its defaults span all five regions from 1 January 2022 to 31 July 2026, with
-the final 20% of the time range reserved for testing. To change ingestion
-dates, edit the loader defaults there; these are not CLI options.
+The date range is set by `EXPERIMENT.start_date` and `EXPERIMENT.end_date`
+in `main.py` (the `ExperimentConfig` defaults live in
+`pipeline/experiment_pipeline.py`). Use ISO date/time strings in timezone-naive
+NEM market time, with an inclusive start and exclusive end. The final 20% of
+the time range is reserved for testing. Changing the date range selects separate
+prepared-data and graph-embedding caches; the range is also saved in run metadata.
+These dates are not CLI options.
 
 Raw caches live under `pipeline/data_cleaning/nemosis_cache/` and
 `pipeline/data_cleaning/nemseer_cache/`. Prepared data and graph embeddings

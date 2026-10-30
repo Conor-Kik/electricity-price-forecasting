@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
+from datetime import datetime
 from typing import Literal
 
 import pandas as pd
@@ -119,6 +120,8 @@ def build_split_features(
     config: FeatureConfig | None = None,
     train_data=None,
     test_data=None,
+    start: datetime | None = None,
+    end: datetime | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, FeatureConfig]:
     """Engineer features for every region in both chronological splits."""
 
@@ -156,7 +159,12 @@ def build_split_features(
         # the ingestion implementation until this convenience function is used.
         from pipeline.data_cleaning.data import getTrainTestData
 
-        train_data, test_data = getTrainTestData()
+        date_options = {}
+        if start is not None:
+            date_options["start"] = start
+        if end is not None:
+            date_options["end"] = end
+        train_data, test_data = getTrainTestData(**date_options)
 
     train_actuals, train_p5min = extract_actuals_and_p5min(train_data)
     test_actuals, test_p5min = extract_actuals_and_p5min(test_data)
@@ -216,6 +224,8 @@ def prepare_model_data(
     config: FeatureConfig | None = None,
     train_data=None,
     test_data=None,
+    start: datetime | None = None,
+    end: datetime | None = None,
     learned_features: Callable[[pd.DataFrame, pd.DataFrame], LearnedFeatures]
     | None = None,
 ) -> PreparedModelData:
@@ -259,6 +269,10 @@ def prepare_model_data(
         Optional already-loaded ingestion objects. If omitted, the function
         calls ``data_cleaning.data.getTrainTestData()`` itself.
 
+    start, end:
+        Optional ingestion bounds (inclusive start, exclusive end). Ignored when
+        train_data and test_data are supplied explicitly.
+
     learned_features:
         Optional stage fitted on the all-region feature frames, for example the
         graph encoder. Its columns are joined on region and timestamp and
@@ -278,6 +292,8 @@ def prepare_model_data(
         config=config,
         train_data=train_data,
         test_data=test_data,
+        start=start,
+        end=end,
     )
 
     learned = None
